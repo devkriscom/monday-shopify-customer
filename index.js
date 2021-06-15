@@ -35,24 +35,23 @@ exports.handler = async (event) => {
       first_name: cleanedCustomer.first_name,
       last_name: cleanedCustomer.last_name,
       email: cleanedCustomer.email,
-      phone: cleanedCustomer.phone,
+      phone: cleanedCustomer.item_id5,
       verified_email: false,
       addresses: [
         {
           address1: cleanedCustomer.billing_address,
           address2: cleanedCustomer.bill_addy_unit7,
           city: cleanedCustomer.bill_addy_city,
-          province: cleanedCustomer.bill_addy_state,
           phone: cleanedCustomer.item_id5,
-          zip: cleanedCustomer.bill_addy_zip,
           last_name: cleanedCustomer.last_name,
           first_name: cleanedCustomer.first_name,
-          country: cleanedCustomer.bill_addy_country5,
         },
       ],
       send_email_invite: true,
       tags: "wholesale",
       accepts_marketing: true,
+      //Shopify will not create the customer unless the country, province, and zip are validated & correct, so since the Monday form has no validation, we pass it along in the notes
+      note: `Billing Address - State: ${cleanedCustomer.bill_addy_state} Zip: ${cleanedCustomer.bill_addy_zip} Country: ${cleanedCustomer.bill_addy_country5}`,
     };
 
     const shopify = new Shopify({
@@ -71,8 +70,7 @@ exports.handler = async (event) => {
   //recievedData = event.event;
   //if (recievedData.value.label.text == "APPROVED") {
   //	itemId = recievedData.pulseId;
-  //hardcoding the item ID for testing
-  itemId = 11111111;
+  itemId = 1231231231;
 
   //construct GraphQL query to get the entire Monday.com item data, since the webhook only sends us one column's value initially
   let query =
@@ -90,6 +88,7 @@ exports.handler = async (event) => {
     }),
   })
     .then((r) => r.json())
+    //.then((data) => console.log(data.data.items[0]))
     .then((data) => createShopifyCustomer(data.data.items[0].column_values));
   //}
   //	}
