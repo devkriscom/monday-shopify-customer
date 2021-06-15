@@ -25,8 +25,6 @@
   },
   "homepage": "https://github.com/explorier/monday-shopify-customer#readme",
   "dependencies": {
-    "graphql": "^15.5.0",
-    "graphql-tag": "^2.12.4",
     "node-fetch": "^2.6.1",
     "shopify-api-node": "^3.6.12"
   }
