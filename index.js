@@ -26,7 +26,7 @@ exports.handler = async (event) => {
       let query =
         "query items($id: Int) { items(ids: [$id] ) { id name column_values { id title value } } }";
 
-      fetch("https://api.monday.com/v2", {
+      await fetch("https://api.monday.com/v2", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
