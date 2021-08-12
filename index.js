@@ -22,11 +22,11 @@ exports.handler = async(event) => {
   return response;
 	}
   */
-  
+
 
   async function createShopifyCustomer(data) {
 
-    console.info("DATA PASSED TO CREATE SHOPIFY CUSTOMER\n" + JSON.stringify(data, null, 2));
+    //console.info("DATA PASSED TO CREATE SHOPIFY CUSTOMER\n" + JSON.stringify(data, null, 2));
 
     let cleanedCustomer = Object.assign({},
       ...data.map((obj) => {
@@ -42,7 +42,7 @@ exports.handler = async(event) => {
       })
     );
 
-    console.info("CLEANED_CUSTOMER\n" + JSON.stringify(cleanedCustomer, null, 2));
+    //console.info("CLEANED_CUSTOMER\n" + JSON.stringify(cleanedCustomer, null, 2));
 
 
     let newCustomer = {
@@ -65,48 +65,57 @@ exports.handler = async(event) => {
       //Shopify will not create the customer unless the country, province, and zip are validated & correct, so since the Monday form has no validation, we pass it along in the notes
       note: `Billing Address - State: ${cleanedCustomer.bill_addy_state} Zip: ${cleanedCustomer.bill_addy_zip} Country: ${cleanedCustomer.bill_addy_country5}`,
     };
-    console.info("NEW_CUSTOMER\n" + JSON.stringify(newCustomer, null, 2));
+    //console.info("NEW_CUSTOMER\n" + JSON.stringify(newCustomer, null, 2));
 
     const shopify = new Shopify({
       shopName: process.env.shopName,
       apiKey: process.env.APIKey,
       password: process.env.APIPass,
     });
-    
-   function customerExists(returnedEmail) {
-     return shopify.customer
-      //.search( { email: newCustomer.email })
-      .search( { email: returnedEmail });
-   }
-      
-    /*await (customer) => {
-        console.info(customer) 
-      })
-      .catch((error) => console.info('Shopify API Error: ' + error)); I 
-      */
-    
+
+    function customerExists(returnedEmail) {
+      return shopify.customer
+        .search({ email: returnedEmail });
+    }
+
     async function createCustomer(newCustomer) {
-    const returnCustomerObj = await customerExists(newCustomer.email);
-      
+
+      const returnCustomerObj = await customerExists(newCustomer.email);
+
       if (returnCustomerObj[0]?.email) {
         console.info('Customer already exists in Shopify database\n' + JSON.stringify(returnCustomerObj));
-        
+
+        let customerId = returnCustomerObj[0].id;
+
         //add function to tag existing customer
-     
-      } else { 
-      await shopify.customer
-      .create(newCustomer)
-      .then((customer) => console.info(customer))
-      .catch((error) => console.info(error));
-        }
+        await shopify.customer.update(customerId, { tags: `wholesale, ${returnCustomerObj[0].tags}` })
+          .then((customer) => console.info(customer))
+          .catch((error) => console.info(error));
+
+        await shopify.customer.sendInvite(customerId, { to: returnCustomerObj.email })
+          .then((customer) => console.info(customer))
+          .catch((error) => console.info(error));
+
+      }
+      else {
+        await shopify.customer
+          .create(newCustomer)
+          .then((customer) => console.info(customer))
+          .catch((error) => console.info(error));
+      }
     }
-    
+
     await createCustomer(newCustomer);
 
   }
 
+  //console.info("EVENT\n" + JSON.stringify(event, null, 2));
+
   if (event.body !== null && event.body !== undefined) {
-    let recievedData = event;
+    //if (event !== null && event !== undefined) {
+    let recievedData = JSON.parse(event.body).event;
+    //let recievedData = event;
+    //console.info("RECIEVED_DATA\n" + JSON.stringify(recievedData, null, 2));
 
     if (recievedData.value.label.text == "APPROVED") {
       itemId = recievedData.pulseId;
